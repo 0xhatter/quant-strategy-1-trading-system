@@ -310,7 +310,7 @@ if __name__ == "__main__":
     system = QuantTradingSystem(
         initial_capital=10000,
         assets_to_select=3,
-        use_synthetic_data=True
+        use_synthetic_data=False  # Use real Hyperliquid API data
     )
     
     # Run full pipeline

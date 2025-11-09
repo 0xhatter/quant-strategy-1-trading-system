@@ -110,35 +110,69 @@ class HyperliquidDataCollector:
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         return df
     
-    def _fetch_real_ohlcv(self, symbol: str, interval: str, 
+    def _fetch_real_ohlcv(self, symbol: str, interval: str,
                           lookback_hours: int) -> pd.DataFrame:
         """Fetch real OHLCV data from Hyperliquid API."""
-        # This is a placeholder for real API implementation
-        # You would implement actual API calls here
         endpoint = f"{self.base_url}/info"
-        
+
         try:
-            # Example API call structure (adjust based on actual API)
-            params = {
+            # Calculate timestamps in milliseconds
+            end_time = datetime.now()
+            start_time = end_time - timedelta(hours=lookback_hours)
+
+            # Prepare request payload
+            payload = {
                 'type': 'candleSnapshot',
                 'req': {
                     'coin': symbol,
                     'interval': interval,
-                    'startTime': int((datetime.now() - timedelta(hours=lookback_hours)).timestamp() * 1000),
-                    'endTime': int(datetime.now().timestamp() * 1000)
+                    'startTime': int(start_time.timestamp() * 1000),
+                    'endTime': int(end_time.timestamp() * 1000)
                 }
             }
-            
-            response = requests.post(endpoint, json=params)
+
+            # Make API request
+            print(f"Fetching {symbol} data from Hyperliquid API...")
+            response = requests.post(endpoint, json=payload, timeout=30)
             response.raise_for_status()
-            
-            data = response.json()
-            # Parse response into DataFrame
-            # This would need to be adjusted based on actual API response format
-            
-            return pd.DataFrame(data)
+
+            # Parse response
+            candles = response.json()
+
+            if not candles or len(candles) == 0:
+                print(f"Warning: No data returned for {symbol}")
+                print("Falling back to synthetic data...")
+                return self._generate_synthetic_ohlcv(symbol, interval, lookback_hours)
+
+            # Convert to DataFrame with correct column mapping
+            # API returns: t (timestamp), o (open), h (high), l (low), c (close), v (volume)
+            data = []
+            for candle in candles:
+                data.append({
+                    'timestamp': pd.to_datetime(int(candle['t']), unit='ms'),
+                    'open': float(candle['o']),
+                    'high': float(candle['h']),
+                    'low': float(candle['l']),
+                    'close': float(candle['c']),
+                    'volume': float(candle['v'])
+                })
+
+            df = pd.DataFrame(data)
+            print(f"Successfully fetched {len(df)} candles for {symbol}")
+            print(f"Date range: {df['timestamp'].min()} to {df['timestamp'].max()}")
+
+            return df
+
+        except requests.exceptions.RequestException as e:
+            print(f"API request error: {e}")
+            print("Falling back to synthetic data...")
+            return self._generate_synthetic_ohlcv(symbol, interval, lookback_hours)
+        except (KeyError, ValueError, TypeError) as e:
+            print(f"Error parsing API response: {e}")
+            print("Falling back to synthetic data...")
+            return self._generate_synthetic_ohlcv(symbol, interval, lookback_hours)
         except Exception as e:
-            print(f"Error fetching real data: {e}")
+            print(f"Unexpected error fetching real data: {e}")
             print("Falling back to synthetic data...")
             return self._generate_synthetic_ohlcv(symbol, interval, lookback_hours)
     
@@ -227,8 +261,8 @@ if __name__ == "__main__":
     print("DATA COLLECTION MODULE TEST")
     print("=" * 60)
     
-    # Initialize collector with synthetic data
-    collector = HyperliquidDataCollector(use_synthetic=True)
+    # Initialize collector with real Hyperliquid API data
+    collector = HyperliquidDataCollector(use_synthetic=False)
     
     # Test single asset
     print("\n1. Fetching BTC data...")
