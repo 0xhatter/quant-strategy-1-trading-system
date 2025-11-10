@@ -24,9 +24,12 @@ class AssetSelector:
         self.data_collector = data_collector or HyperliquidDataCollector(use_synthetic=True)
         
         # Default universe of assets to consider
+        # Includes high-variance tokens like HYPE, ASTER
         self.asset_universe = [
-            'BTC', 'ETH', 'SOL', 'AVAX', 'MATIC', 
-            'ARB', 'OP', 'ATOM', 'DOT', 'LINK'
+            'BTC', 'ETH', 'SOL', 'AVAX', 'MATIC',
+            'ARB', 'OP', 'ATOM', 'DOT', 'LINK',
+            'HYPE', 'ASTER', 'WIF', 'BONK', 'PEPE',
+            'JTO', 'JUP', 'PYTH', 'SEI', 'SUI'
         ]
     
     def calculate_asset_scores(self, df: pd.DataFrame, symbol: str) -> Dict[str, float]:
@@ -114,16 +117,18 @@ class AssetSelector:
     
     def select_top_assets(self, n: int = 3, interval: str = '1h',
                          lookback_hours: int = 720,
-                         custom_universe: Optional[List[str]] = None) -> pd.DataFrame:
+                         custom_universe: Optional[List[str]] = None,
+                         sort_by: str = 'composite_score') -> pd.DataFrame:
         """
-        Select top N assets based on composite scoring.
-        
+        Select top N assets based on scoring.
+
         Args:
             n: Number of assets to select
             interval: Time interval for data
             lookback_hours: Hours of historical data
             custom_universe: Custom list of assets (uses default if None)
-            
+            sort_by: Metric to sort by ('composite_score', 'variance_score', 'volatility_score')
+
         Returns:
             DataFrame with ranked assets and their scores
         """
@@ -144,16 +149,17 @@ class AssetSelector:
             scores.append(score_dict)
             print(f"{symbol:6s}: Composite Score = {score_dict['composite_score']:.2f}")
         
-        # Create DataFrame and sort by composite score
+        # Create DataFrame and sort by specified metric
         scores_df = pd.DataFrame(scores)
-        scores_df = scores_df.sort_values('composite_score', ascending=False)
-        
+        scores_df = scores_df.sort_values(sort_by, ascending=False)
+
         print("-" * 60)
-        print(f"\nTop {n} selected assets:")
+        print(f"\nTop {n} selected assets (sorted by {sort_by}):")
         top_assets = scores_df.head(n)
         for idx, row in top_assets.iterrows():
-            print(f"  {row['symbol']:6s}: {row['composite_score']:.2f} "
-                  f"(Vol: {row['volatility_score']:.1f}, "
+            print(f"  {row['symbol']:6s}: {row[sort_by]:.2f} "
+                  f"(Var: {row['variance_score']:.1f}, "
+                  f"Vol: {row['volatility_score']:.1f}, "
                   f"Liq: {row['liquidity_score']:.1f})")
         
         return scores_df
