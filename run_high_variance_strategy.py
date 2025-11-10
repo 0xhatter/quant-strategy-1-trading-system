@@ -39,7 +39,7 @@ def main():
     print("\nAsset Universe (20 tokens):")
     print("  " + ", ".join(system.asset_selector.asset_universe))
 
-    input("\nPress Enter to start the analysis and training...")
+    print("\nStarting analysis and training automatically...")
 
     # Run full pipeline with variance-focused selection
     print("\n" + "=" * 80)
@@ -75,7 +75,6 @@ def main():
         print(f"  Max Drawdown:        {metrics['max_drawdown']*100:>8.2f}%")
         print(f"  Win Rate:            {metrics['win_rate']*100:>8.2f}%")
         print(f"  Total Trades:        {metrics['total_trades']:>8}")
-        print(f"  Avg Trade Return:    {metrics['avg_trade_return']*100:>8.2f}%")
 
     # Save models
     print("\n" + "=" * 80)
