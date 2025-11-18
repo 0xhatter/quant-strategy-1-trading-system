@@ -1,0 +1,18 @@
+================================================================================
+TRAINING XPL WITH REAL HYPERLIQUID DATA
+================================================================================
+
+Testing XPL data availability...
+Fetching XPL data from Hyperliquid API...
+Successfully fetched 721 candles for XPL
+Date range: 2025-10-19 07:00:00 to 2025-11-18 07:00:00
+✓ Real data available: 721 candles
+  Date range: 2025-10-19 07:00:00 to 2025-11-18 07:00:00
+  Latest price: $0.2406
+
+Training ML model for XPL...
+Traceback (most recent call last):
+  File "/home/user/quant-strategy-1-trading-system/train_xpl.py", line 41, in <module>
+    results = system.run_pipeline(epochs=50)
+              ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'QuantTradingSystem' object has no attribute 'run_pipeline'. Did you mean: 'run_full_pipeline'?
